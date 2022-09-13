@@ -54,7 +54,7 @@ float changeReading(float temp, boolean inFahrenheit){ //this is done
 }
 
 void powerLCD(boolean power){
-  if (powerOn){
+  if (power){
     //todo turn the LCD on
   }
   else{

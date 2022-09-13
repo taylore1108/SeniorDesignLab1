@@ -18,7 +18,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   buttonState = digitalRead(switchPin);
-  if(digitalRead(switch_pin) == HIGH){
+  if(digitalRead(switchPin) == HIGH){
     probetemp = changeReading(readProbe(), changetoF);
     
     buttonState = digitalRead(buttonPin);
@@ -28,8 +28,10 @@ void loop() {
   
     if (buttonState == HIGH) { // we only want to display locally when the button is pressed
       powerLCD(true);
-      lcd.setCursor(0, 1);
+      lcd.setCursor(0, 1); //todo double check this prints in the right spot 
       lcd.print(probetemp);
+      if (changetoF) lcd.print("F");
+      else lcd.print("C");
     
     }else{ 
       powerLCD(false);

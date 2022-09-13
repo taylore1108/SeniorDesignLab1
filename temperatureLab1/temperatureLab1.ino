@@ -1,7 +1,8 @@
 #include <LiquidCrystal.h>
 
-const int buttonPin = 2; // digital pin two is wired to push button
-const int switchPin = 4;
+const int buttonPin = 7; // digital pin two is wired to push button
+const int switchPin = 6;
+const int lcdPin = 8;
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 int buttonState = 0; // state of the button
@@ -12,6 +13,7 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(buttonPin, INPUT);
   pinMode(switchPin, INPUT);
+  pinMode(lcdPin, OUTPUT);
   lcd.begin(16, 2);
 }
 
@@ -53,11 +55,11 @@ float changeReading(float temp, boolean inFahrenheit){ //this is done
   return temp;
 }
 
-void powerLCD(boolean power){
+void powerLCD(boolean power){ // todo test this
   if (power){
-    //todo turn the LCD on
+    digitalWrite(lcdPin, HIGH);
   }
   else{
-    //todo turn the LCD off
+    digitalWrite(lcdPin, LOW);
   }
 }

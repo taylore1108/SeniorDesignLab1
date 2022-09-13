@@ -1,13 +1,14 @@
 #include <LiquidCrystal.h>
 
-const int buttonPin = 7; // digital pin two is wired to push button
-const int switchPin = 6;
-const int lcdPin = 8;
-const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+const int buttonPin = 7; // digital pin for push button
+const int switchPin = 6; // digital pin for the switch
+const int lcdPin = 8; // this is where the LCD power goes
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2; // follow link in google doc for wiring
+
 int buttonState = 0; // state of the button
 float probetemp = 0; // this is the probe temp value we read
-boolean changetoF = false; // do we want to convert probe temp in C to temp in F?
+boolean changetoF = false; // do we want to convert probe temp in C to temp in F? yes = true, no = false
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void setup() {
   // put your setup code here, to run once:

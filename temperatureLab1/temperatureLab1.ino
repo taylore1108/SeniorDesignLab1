@@ -1,6 +1,7 @@
 #include <LiquidCrystal.h>
 #include <SPI.h>
-#include <WiFi.h>
+#include <DS18B20.h> //library for the Temp Sensor
+//#include <WiFi.h>
 
 //hardware set up
 const int buttonPin = 7; // digital pin for push button
@@ -18,6 +19,7 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void setup() {
   //todo add 
+  Serial.begin(9600);
   pinMode(buttonPin, INPUT);
   pinMode(switchPin, INPUT);
   pinMode(lcdPin, OUTPUT);
@@ -34,37 +36,39 @@ void loop() {
     //read is "virtual button" is pressed
     //if("vitrualButton == HIGH) buttonState =HIGH;
   
-    if (buttonState == HIGH) { // we only want to display locally when the button is pressed
+    // if (buttonState == HIGH) { // we only want to display locally when the button is pressed
       powerLCD(true);
       lcd.clear();
       lcd.setCursor(0, 0); //todo double check this prints in the right spot 
       lcd.print(changeReading(readProbe(), changetoF));
+      delay(1000);
     
-    }else{ 
-      powerLCD(false);
-      lcd.clear();
+    // }else{ 
+    //   powerLCD(false);
+    //   lcd.clear();
     
-    }
+    // }
   }
 }
 
 float readProbe(){
   //todo read probe temperature in celcius here
-
-  //if disconnected
-  return -1;
+    DS18B20 ds(6); //sets the temp probe to pin 6
+    float temp = ds.getTempC(); //gets the temperature of the probe
+      Serial.println(String(temp,2));
+      return temp;
 }
 
 String changeReading(float temp, boolean inFahrenheit){ //this is done
 
-  if(temp == -1){
+  if(temp == -0.06){
     return "Unplugged Sensor";
   }
   
   if(inFahrenheit){
-    return String((temp * 9/5)+32) + "F";
+    return String((temp * 9/5)+32,2);
   }
-  return String(temp) + "C";
+  return String(temp)+"C";
 }
 
 void powerLCD(boolean power){ // todo test this

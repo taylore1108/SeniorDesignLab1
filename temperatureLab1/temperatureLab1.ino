@@ -16,9 +16,12 @@ float probetemp = 0; // this is the probe temp value we read
 boolean changetoF = false; // do we want to convert probe temp in C to temp in F? yes = true, no = false
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+//sms set up 
+const char* resource = "https://maker.ifttt.com/trigger/YOUR EVENT NAME HERE/with/key/YOUR KEY HERE";
+const char* server = "maker.ifttt.com";
+
 void setup() {
   //todo add 
-  Serial.begin(9600);
   pinMode(buttonPin, INPUT);
   pinMode(switchPin, INPUT);
   pinMode(lcdPin, OUTPUT);
@@ -35,12 +38,15 @@ void loop() {
     //read is "virtual button" is pressed
     //if("vitrualButton == HIGH) buttonState =HIGH;
   
+    if (buttonState == HIGH) { // we only want to display locally when the button is pressed
       powerLCD(true);
       lcd.clear();
       lcd.setCursor(0, 0); //todo double check this prints in the right spot 
       lcd.print(changeReading(readProbe(), changetoF));
-      delay(1000);
     
+    }else{ 
+      powerLCD(false);
+      lcd.clear();
     
     // }
     }
@@ -49,10 +55,6 @@ void loop() {
 
 float readProbe(){
   //todo read probe temperature in celcius here
-    DS18B20 ds(6); //sets the temp probe to pin 6
-    float temp = ds.getTempC(); //gets the temperature of the probe
-      Serial.println(String(temp,2));
-      return temp;
 
   //if disconnected
   return -1;
@@ -60,13 +62,14 @@ float readProbe(){
 
 String changeReading(float temp, boolean inFahrenheit){ //this is done
 
-  if(temp == -0.06){
   if(temp == -1){
     return "Unplugged Sensor";
   }
   
   if(inFahrenheit){
+    return String((temp * 9/5)+32) + "F";
   }
+  return String(temp) + "C";
 }
 
 void powerLCD(boolean power){ // todo test this

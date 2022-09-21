@@ -48,7 +48,6 @@ void loop() {
       powerLCD(false);
       lcd.clear();
     
-    // }
     }
   }
 }

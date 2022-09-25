@@ -1,6 +1,11 @@
 #include <LiquidCrystal.h>
 #include <SPI.h>
 #include <WiFi.h>
+#include <ArduinoHttpClient.h>
+
+
+#include "SerialTransfer.h"
+SerialTransfer myTransfer;
 
 //hardware set up
 const int buttonPin = 7; // digital pin for push button
@@ -19,9 +24,20 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 //sms set up 
 const char* resource = "https://maker.ifttt.com/trigger/YOUR EVENT NAME HERE/with/key/YOUR KEY HERE";
 const char* server = "maker.ifttt.com";
+String numberToText = "16308006164";
+String messageToText = "This is a text of the arduino functions";
+int TextTopBoundry;
+int TextBottomBoundry;
+const char* ssid     = "BlueFish";
+const char* password = "RedTurtle";
 
 void setup() {
-  //todo add 
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
   pinMode(buttonPin, INPUT);
   pinMode(switchPin, INPUT);
   pinMode(lcdPin, OUTPUT);
@@ -49,6 +65,50 @@ void loop() {
       lcd.clear();
     
     }
+  }
+}
+
+void sendTextTest1(){
+  WiFiClient client;
+  client.print(String("GET ") + resource + 
+                    " HTTP/1.1\r\n" +
+                    "Host: " + server + "\r\n" + 
+                    "Connection: close\r\n\r\n");
+                
+  int timeout = 5 * 10; // 5 seconds             
+  while(!!!client.available() && (timeout-- > 0))
+  {
+    delay(100);
+  }
+  while(client.available())
+  {
+    Serial.write(client.read());
+  }
+  client.stop();
+}
+
+void sendTextTest2(){
+  HttpClient http;   
+  http.begin(resource);  
+  http.addHeader("Content-Type", "application/json");         
+   
+  StaticJsonDocument<200> doc;
+  doc["Value1"] = messageToText;
+  doc["Value2"] = numberToText;
+   
+  String requestBody;
+  serializeJson(doc, requestBody);
+   
+  int httpResponseCode = http.POST(requestBody);
+
+  if(httpResponseCode>0){
+    String response = http.getString();                       
+     
+    Serial.println(httpResponseCode);   
+    Serial.println(response);
+  }
+  else {
+    Serial.printf("Error occurred while sending HTTP POST: %s\n", httpClient.errorToString(statusCode).c_str());
   }
 }
 

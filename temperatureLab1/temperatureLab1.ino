@@ -1,18 +1,23 @@
 #include <LiquidCrystal.h>
 #include <SPI.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 #include <DS18B20.h>
 
-#include "SerialTransfer.h"
-SerialTransfer myTransfer;
+#include <Arduino.h>
 
+#include <WiFi.h>
+#include <WiFiMulti.h>
+
+#include <HTTPClient.h>
+
+#define USE_SERIAL Serial
+
+WiFiMulti wifiMulti;
 //hardware set up
-const int buttonPin = 5; // digital pin for push button
-const int switchPin = 4; // digital pin for the switch
-//const int lcdPin = 6; // this is where the LCD power goes
-const int rs = 7, en = 6, d4 = 3, d5 = 2, d6 = 1, d7 = 0; // follow link in google doc for wiring
+int buttonPin = 35; // digital pin for push button
+const int switchPin = 34; // digital pin for the switch
+const int lcdPin = 12; // this is where the LCD power goes
+const int rs = 14, en = 27, d4 = 26, d5 = 32, d6 = 33, d7 = 25; // follow link in google doc for wiring
 const byte ip[] = { 192, 168, 0, 50 };
 const byte mac[] = { 0x90, 0xA2, 0xDA, 0x0D, 0x85, 0xD9 };
 
@@ -20,7 +25,7 @@ const byte mac[] = { 0x90, 0xA2, 0xDA, 0x0D, 0x85, 0xD9 };
 int buttonState = 0; // state of the button
 float probetemp = 0; // this is the probe temp value we read
 boolean changetoF = false; // do we want to convert probe temp in C to temp in F? yes = true, no = false
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 //sms set up 
 const char* resource = "https://maker.ifttt.com/trigger/TempTrigger/with/key/fOZGnZt3fxbSPMjgMfd_Xij7h7Z5Gg_B_gQv8RhImyV";
@@ -33,12 +38,12 @@ const char* ssid     = "BlueFish";
 const char* password = "RedTurtle";
 
 void setup() {
-  Serial.begin(115200);
+  USE_SERIAL.begin(115200);
   initWiFi();
-  
-  pinMode(buttonPin, INPUT);
+  sendTextTest2();
+  pinMode(buttonPin, INPUT); // buttonPin = 14 / D5;
   pinMode(switchPin, INPUT);
-  //pinMode(lcdPin, OUTPUT);
+  pinMode(lcdPin, OUTPUT);
   lcd.begin(16, 2);
 }
 
@@ -67,23 +72,26 @@ void loop() {
 }
 
 void initWiFi() {
-  WiFi.setHostname("Group17");
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi ..");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print('.');
-    delay(1000);
-  }
-  Serial.println(WiFi.localIP());
+    USE_SERIAL.println();
+    USE_SERIAL.println();
+    USE_SERIAL.println();
+
+    for(uint8_t t = 4; t > 0; t--) {
+        USE_SERIAL.printf("[SETUP] WAIT %d...\n", t);
+        USE_SERIAL.flush();
+        delay(1000);
+    }
+
+    wifiMulti.addAP(ssid, password);
 }
 
 void sendTextTest2(){
-  HTTPClient http;   
-  WiFiClient client;
-  http.begin(client, resource);  
-  http.addHeader("Content-Type", "application/json");       
-  int httpResponseCode = http.POST("{\"value1\":\"Message body here\",\"value2\":\"16308006164\"}");
-
+   if((wifiMulti.run() == WL_CONNECTED)) {
+      HTTPClient http;   
+      http.begin(resource);  
+      http.addHeader("Content-Type", "application/json");       
+      int httpResponseCode = http.POST("{\"value1\":\"Message body here\",\"value2\":\"16308006164\"}");
+USE_SERIAL.println("Response Code"+httpResponseCode);
    
 //  StaticJsonDocument<200> doc;
 //  doc["Value1"] = messageToText;
@@ -94,21 +102,21 @@ void sendTextTest2(){
    
  //int httpResponseCode = http.POST(requestBody);
 
-  if(httpResponseCode>0){
-    String response = http.getString();                       
+      if(httpResponseCode > 0) { String response = http.getString();                       
      
-    Serial.println(httpResponseCode);   
-    Serial.println(response);
+      http.end();
+       delay(5000);
   }
   else {
-    //Serial.printf("Error occurred while sending HTTP POST: %s\n", http.errorToString(statusCode));
+    USE_SERIAL.printf("Error occurred while sending HTTP POST: %s\n", http.errorToString(httpResponseCode));
   }
+   }
 }
 
 float readProbe(){
-  DS18B20 ds(6); //sets the temp probe to pin 6
+  DS18B20 ds(15); //sets the temp probe to pin 6
   float temp = ds.getTempC(); //gets the temperature of the probe
-  Serial.println(String(temp,2));
+  USE_SERIAL.println(String(temp,2));
   return temp;
 }
 
@@ -126,9 +134,10 @@ String changeReading(float temp, boolean inFahrenheit){ //this is done
 
 void powerLCD(boolean power){ // todo test this
   if (power){
-    //digitalWrite(lcdPin, HIGH);
+    digitalWrite(lcdPin, HIGH);
+    
   }
   else{
-    //digitalWrite(lcdPin, LOW);
+    digitalWrite(lcdPin, LOW);
   }
 }

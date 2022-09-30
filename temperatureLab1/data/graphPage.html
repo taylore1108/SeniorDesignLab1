@@ -72,11 +72,14 @@
     </div>
     </form>
   </div>
+  <dialog id = "myDialog">The Device is switched off</dialog>
+  
 </body>
 <script>
   var isCelsius = true;
   var graphY_Max = 50;
   var graphY_Min = 10;
+  var isDialog = false;
   var phoneNumber = "N\\A";
   var safeMax = 25;
   var safeMin = 23;
@@ -85,6 +88,8 @@
   const lcdButton = document.getElementById('turnOnLcdButton');
   const maxBtn = document.getElementById('maxSubmit');
   const minBtn = document.getElementById('minSubmit');
+  const dialogButton = document.getElementById('showDialog');
+
   // const numDisplay = document.getElementById('phoneDisplay');
   degreeBtn.addEventListener("click", () => {
     isCelsius = !isCelsius;
@@ -92,6 +97,7 @@
       degreeBtn.textContent = 'Change to Fahrenheit';
       chartT.yAxis[0].setTitle({ text: "Temperature (Celsius)" });
       chartT.yAxis[0].setExtremes(10, 50);
+
     } else {
       degreeBtn.textContent = 'Change to Celsius';
       chartT.yAxis[0].setTitle({ text: "Temperature (Fahrenheit)" });
@@ -177,11 +183,20 @@
       if (this.readyState == 4 && this.status == 200) {
         var x = (new Date()).getTime(),
           y = parseFloat(this.responseText);
+
         //console.log(this.responseText);
-        if (chartT.series[0].data.length > 40) {
-          chartT.series[0].addPoint([x, y], true, true, true);
-        } else {
-          chartT.series[0].addPoint([x, y], true, false, true);
+        if(y>0){
+          if(isDialog){
+            isDialog=false;
+            hidePopUp();
+          }
+          if (chartT.series[0].data.length > 40) {
+            chartT.series[0].addPoint([x, y], true, true, true);
+          } else {
+            chartT.series[0].addPoint([x, y], true, false, true);
+          }
+        }else{
+          showPopUp();
         }
       }
     };
@@ -193,6 +208,24 @@
     var cToFahr = cTemp * 9 / 5 + 32;
     var message = cTemp + '\xB0C is ' + cToFahr + ' \xB0F.';
   }
+  function fToC(fahr){
+    var fTemp = fahr;
+    var fToCel = (fTem-32)/1.8;
+    
+  }
+  function showPopUp(){
+    if(!isDialog){
+      isDialog=true;
+      document.getElementById("myDialog").show();
+    }
+  }
+  function hidePopUp(){
+    document.getElementById("myDialog").close();
+  }
+  dialogButton.addEventListener('click', function handleClick(event) {
+    //event.preventDefault();
+    showPopUp();
+  });
 
   submitElem.addEventListener('click', function handleClick(event) {
     event.preventDefault();

@@ -76,7 +76,7 @@
           <Label id="phoneDisplay">Num: N\A</label>
         </div>
       </form>
-      <form>
+      <form action="/get">
         <div style="text-align: center; margin:5px;" >
           <label for "maxInput">Enter the max temp: </label>
           <input id = "maxInput" type = "number" required name = "maxInput" placeholder = "max"/>
@@ -236,6 +236,7 @@
   lcdButton.addEventListener('mousedown', function handleClick(event){
     event.preventDefault();
     document.getElementById("turnOnLcdButton").innerHTML = "LCD on";
+    
   });
   lcdButton.addEventListener('mouseup', function handleClick(event){
     event.preventDefault();

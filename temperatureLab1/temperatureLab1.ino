@@ -230,21 +230,8 @@
     const maxDisplay = document.getElementById('maxDisplay');
     maxDisplay.innerHTML = 'Max:' + maxNumber;
   });
-//  setInterval(function () {
-//    var yhttp = new XMLHttpRequest();
-//    yhttp.onreadystatechange = function(){
-//      if(this.readyState == 4 && this.status == 200){
-//        var newMin =document.getElementById('minDisplay').value;
-//        document.getElementById('minDisplay').innerHTML = "Value Pulled";
-//        String y = newMin.toString(10);
-//      }
-//    };
-//    yhttp.open("POST", "/min", true);
-//    yhttp.setRequestHeader("Content-type", "text/plain");
-//    yhttp.send(y);
-//  },500);
   minBtn.addEventListener('click', function handleClick(event) {
-    event.preventDefault();
+    //event.preventDefault();
     const minInput = document.getElementById('minInput');
     minNumber = minInput.value;
     minInput.value = '';

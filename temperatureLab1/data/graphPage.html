@@ -73,7 +73,6 @@
   const degreeBtn = document.getElementById('degreeButton');
   const submitElem = document.getElementById('phoneSubmit');
   const lcdButton = document.getElementById('turnOnLcdButton');
-  const maxBtn = document.getElementById('maxSubmit');
   const minBtn = document.getElementById('minSubmit');
   // const numDisplay = document.getElementById('phoneDisplay');
   degreeBtn.addEventListener("click", () => {
@@ -202,16 +201,8 @@
     event.preventDefault();
     document.getElementById("turnOnLcdButton").innerHTML = "Turn on LCD";
   });
-  maxBtn.addEventListener('click', function handleClick(event) {
-    event.preventDefault();
-    const maxInput = document.getElementById('maxInput');
-    maxNumber = maxInput.value;
-    maxInput.value = '';
-    const maxDisplay = document.getElementById('maxDisplay');
-    maxDisplay.innerHTML = 'Max:' + maxNumber;
-  });
   minBtn.addEventListener('click', function handleClick(event) {
-    //event.preventDefault();
+    event.preventDefault();
     const minInput = document.getElementById('minInput');
     minNumber = minInput.value;
     minInput.value = '';

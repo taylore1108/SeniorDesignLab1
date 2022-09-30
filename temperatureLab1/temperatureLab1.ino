@@ -64,14 +64,25 @@
       <form>
         <div style="text-align: center; margin:5px;">
           <label for "phoneInput">Enter your number: </label>
-          <input id="phoneInput" type="tel" required name="phoneInput" placeholder="###-###-####"
-            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" />
+          <input id="phoneInput" type="tel" required name="phoneInput" placeholder="#-###-###-####"
+            pattern="[0-9]{1}-[0-9]{3}-[0-9]{3}-[0-9]{4}" />
         </div>
         <div style="text-align: center;">
           <button id="phoneSubmit" type="submit">Submit #</button>
           <Label id="phoneDisplay">Num: N\A</label>
         </div>
       </form>
+      <form>
+      <div style="text-align: center; margin:5px;">
+        <label for "maxInput">Enter the max temp: </label>
+        <input id="maxInput" type="number" required name="maxInput" placeholder="max" />
+      </div>
+      <div style="text-align: center;">
+        <button id="maxSubmit" type="submit">Submit Max</button>
+        <Label id="maxDisplay">Max: 23</Label>
+      </div>
+      </form>
+      <form>
         <div style="text-align: center; margin:5px;" >
           <label for "minInput">Enter the min temp: </label>
           <input id = "minInput" type = "number" required name = "minInput" placeholder = "min"/>
@@ -93,21 +104,10 @@
   const degreeBtn = document.getElementById('degreeButton');
   const submitElem = document.getElementById('phoneSubmit');
   const lcdButton = document.getElementById('turnOnLcdButton');
-  //const maxBtn = document.getElementById('maxSubmit');
+  const maxBtn = document.getElementById('maxSubmit');
   const minBtn = document.getElementById('minSubmit');
   // const numDisplay = document.getElementById('phoneDisplay');
-  degreeBtn.addEventListener("click", () => {
-    isCelsius = !isCelsius;
-    if (isCelsius) {
-      degreeBtn.textContent = 'Change to Fahrenheit';
-      chartT.yAxis[0].setTitle({ text: "Temperature (Celsius)" });
-      chartT.yAxis[0].setExtremes(10, 50);
-    } else {
-      degreeBtn.textContent = 'Change to Celsius';
-      chartT.yAxis[0].setTitle({ text: "Temperature (Fahrenheit)" });
-      chartT.yAxis[0].setExtremes(10, 122);
-    }
-  });
+  
   var chartT = new Highcharts.Chart({
     chart: {
       renderTo: 'chart-temperature',
@@ -167,9 +167,12 @@
     xAxis: {
       //title: { text: 'Time (Seconds)' },
       type: 'datetime',
-      dateTimeLabelFormats: { second: '%H:%M:%S' },
-        //max: 300,
-        //min: 0,
+      dateTimeLabelFormats: { second: '%H,%M,%S' },
+      scrollbar:{
+        enabled: true
+      },
+        //max: (new Date()).getTime()-300,
+        //min: (new Date()).getTime(),
         //reversed: true,
 
     },
@@ -188,7 +191,7 @@
          var x = (new Date()).getTime(),
              y = parseFloat(this.responseText);
          //console.log(this.responseText);
-         if(chartT.series[0].data.length > 40) {
+         if(chartT.series[0].data.length > 300) {
            chartT.series[0].addPoint([x, y], true, true, true);
          } else {
            chartT.series[0].addPoint([x, y], true, false, true);
@@ -211,16 +214,36 @@
     numInput.value = '';
     const numDisplay = document.getElementById('phoneDisplay');
     numDisplay.innerHTML = 'Num:' + phoneNumber;
+    var newHttp = new XMLHttpRequest();
+    newHttp.open("GET", "/phone?newPhone="+phoneNumber, true);
+    newHttp.send();
   });
 
   lcdButton.addEventListener('mousedown', function handleClick(event){
     event.preventDefault();
     document.getElementById("turnOnLcdButton").innerHTML = "LCD on";
+    var newHttp = new XMLHttpRequest();
+    newHttp.open("GET", "/max?newButt=" + true, true);
+    newHttp.send();
     
   });
   lcdButton.addEventListener('mouseup', function handleClick(event){
     event.preventDefault();
     document.getElementById("turnOnLcdButton").innerHTML = "Turn on LCD";
+    var newHttp = new XMLHttpRequest();
+    newHttp.open("GET", "/max?newButt=" + false, true);
+    newHttp.send();
+  });
+  maxBtn.addEventListener('click', function handleClick(event) {
+    event.preventDefault();
+    const maxInput = document.getElementById('maxInput');
+    maxNumber = maxInput.value;
+    maxInput.value = '';
+    const maxDisplay = document.getElementById('maxDisplay');
+    maxDisplay.innerHTML = 'Max:' + maxNumber;
+    var newHttp = new XMLHttpRequest();
+    newHttp.open("GET", "/max?newMax=" + maxNumber, true);
+    newHttp.send();
   });
   minBtn.addEventListener('click', function handleClick(event) {
     event.preventDefault();
@@ -233,6 +256,43 @@
     newHttp.open("GET", "/min?newMin="+minNumber, true);
     newHttp.send();
   });
+
+degreeBtn.addEventListener("click", () => {
+    isCelsius = !isCelsius;
+    if (isCelsius) {
+      degreeBtn.textContent = 'Change to Fahrenheit';
+      chartT.yAxis[0].setTitle({ text: "Temperature (Celsius)" });
+      chartT.yAxis[0].setExtremes(10, 50);
+      const fToCel = temp => Math.round((temp -32)/1.8);
+      
+      const newSeries = chartT.series[0].map(subarray => {
+          return subarray.map(elem => {
+            return [elem[0], (elem[1] !==null)? fToCel(elem[1]) : null]
+          });
+        });
+        chartT.series.forEach((series,i)=>{
+          series.update({
+            data: newSeries[i]
+          });
+        });
+    } else {
+      degreeBtn.textContent = 'Change to Celsius';
+      chartT.yAxis[0].setTitle({ text: "Temperature (Fahrenheit)" });
+      chartT.yAxis[0].setExtremes(10, 122);
+      const CelToF = temp => Math.round((temp*1.8)+32);
+      const newSeries = chartT.series[0].map(subarray => {
+          return subarray.map(elem => {
+            return [elem[0], (elem[1] !==null)? CelToF(elem[1]) : null]
+          });
+        });
+        chartT.series.forEach((series,i)=>{
+          series.update({
+            data: newSeries[i]
+          });
+        });
+    }
+  });
+
 
 </script>
 
@@ -264,6 +324,7 @@ String numberToText = "16308006164";
 String messageToText = "This is a text of the arduino functions";
 float TextTopBoundryInC = 26.0; // keep in C
 float TextBottomBoundryInC = 22.0; // keep in C
+boolean virtualButton = false;
 const char* ssid  = "Galaxy S2267C8";
 const char* password = "nxzz5758";
 AsyncWebServer server(80);
@@ -279,8 +340,10 @@ void setup() {
   lcd.setCursor(0, 0);
   lcd.clear();
   lcd.print("Hello Group 17");
-  virtualPowerLCD(true);
+  
+  
   initWiFi();
+  
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/html", html);
   });
@@ -288,43 +351,65 @@ void setup() {
     request->send(200, "text/plain", String(readProbe()).c_str());
     });
 
-  
+  server.on("/phone", HTTP_GET, [](AsyncWebServerRequest *request){
+    String phoneInput = request->getParam("newPhone")->value();
+    phoneFunct(phoneInput);
+    request->send(200, "text/plain", "OK");
+  });
+  server.on("/max", HTTP_GET, [](AsyncWebServerRequest *request){
+    String maxInput = request->getParam("newMax")->value();
+    maxFunct(maxInput.toInt());
+    request->send(200, "text/plain", "OK");
+  });
   server.on("/min", HTTP_GET, [](AsyncWebServerRequest *request){
     String minInput = request->getParam("newMin")->value();
     minFunct(minInput.toInt());
     request->send(200, "text/plain", "OK");
   });
-  
-    
+
+  server.on("/virtBut", HTTP_GET, [](AsyncWebServerRequest *request){
+    boolean buttInput = request->getParam("newButt")->value();
+    buttFunct(buttInput);
+    request->send(200, "text/plain", "OK");
+  });
     server.begin();
   //runClient();
 }
 
 void loop() {
   float t = readProbe();
-  probetemp = changeReading(t, changetoF);
-  if(tempVal != probetemp){
-    tempVal = probetemp;
+  probetemp = changeReading(t);
+   
+  //if(tempVal != probetemp){
+    //tempVal = probetemp;
     lcd.clear();
     lcd.setCursor(0, 0);
-    String ss = String(t)+"C";
-    lcd.print(ss);
-  }
+    String ss =  String(probetemp) + " C";
+    lcd.println(ss);
+  //}
   buttonState = digitalRead(switchPin);
   if(switchVal!=buttonState){
     switchVal = buttonState;
     String s = String( switchVal);
     USE_SERIAL.printf("[DEBUG] SWITCH %s...\n",s);
   }
+  
   if(digitalRead(switchPin) == HIGH){
     buttonState = digitalRead(buttonPin);
     if(buttonVal!=buttonState){
       buttonVal = buttonState;
       String s = String(buttonVal);
       USE_SERIAL.printf("[DEBUG] BUTTON %s...\n",s);
-      
+      if(buttonVal == 0 && !virtualButton){
+        lcd.clear();
+        virtualPowerLCD(false);
+      }
+      else{
+        virtualPowerLCD(true);
+      }
     }
   }
+  
   
   delay(500);
 }
@@ -357,11 +442,27 @@ void runClient(){
   //server.begin();
 }
 
+void phoneFunct(String newPhone){
+  numberToText=newPhone;
+  Serial.print("Phone: ");
+  Serial.println(numberToText);
+}
+void maxFunct(int newMax){
+  TextTopBoundryInC=newMax;
+  Serial.print("Max: ");
+  Serial.println(TextTopBoundryInC);
+}
 void minFunct(int newMin){
   TextBottomBoundryInC=newMin;
   Serial.print("Min: ");
   Serial.println(TextBottomBoundryInC);
 }
+void buttFunct(boolean newButt){
+  virtualButton=newButt;
+  Serial.print("Button: ");
+  Serial.println(virtualButton);
+}
+
 void initWiFi() {
     USE_SERIAL.println();
     USE_SERIAL.println();
@@ -452,18 +553,26 @@ void sendTextTest2(){
 }
 
 float readProbe(){
-  DS18B20 ds(4); //sets the temp probe to pin 4
-  float temp = ds.getTempC(); //gets the temperature of the probe
-  USE_SERIAL.println(String(temp));
-  return temp;
+  if (switchVal == 1){
+    DS18B20 ds(4); //sets the temp probe to pin 4
+    float temp = ds.getTempC(); //gets the temperature of the probe
+    if(temp < 1){
+      temp = 0;
+    }
+    USE_SERIAL.println(String(temp));
+    return temp;
+  }
+  else{
+    return 0;
+  }
 }
 
-String changeReading(float temp, boolean inFahrenheit){ //add savinf data here
+String changeReading(float temp){ //add savinf data here
 
-  if(temp < 1){
+  
+if(temp < 1){
     return "Unplugged Sensor";
   }
-
 //  if(temp < TextBottomBoundryInC){
 //    messageToText = "Temperature Probe detects temperature " +String(temp)+ "C, which is below lower boundry "+ String(TextBottomBoundryInC) +" C"; 
 //    sendTextTest2();
@@ -473,10 +582,7 @@ String changeReading(float temp, boolean inFahrenheit){ //add savinf data here
 //    sendTextTest2();
 //  }
   
-  if(inFahrenheit){
-    return String((temp * 9/5)+32) + "F";
-  }
-  return String(temp) + "C";
+  return String(temp) + " C";
 }
 
 void virtualPowerLCD(boolean power){ // todo test this

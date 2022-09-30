@@ -72,17 +72,6 @@
           <Label id="phoneDisplay">Num: N\A</label>
         </div>
       </form>
-      <form>
-        <div style="text-align: center; margin:5px;" >
-          <label for "maxInput">Enter the max temp: </label>
-          <input id = "maxInput" type = "number" required name = "maxInput" placeholder = "max"/>
-        </div>
-        <div style="text-align: center;">
-          <button id = "maxSubmit" type = "submit">Submit Max</button>
-          <Label id = "maxDisplay">Max: 25</Label>
-        </div>
-      </form>
-      <form>
         <div style="text-align: center; margin:5px;" >
           <label for "minInput">Enter the min temp: </label>
           <input id = "minInput" type = "number" required name = "minInput" placeholder = "min"/>
@@ -176,12 +165,12 @@
       },
     },
     xAxis: {
-      title: { text: 'Time (Seconds)' },
+      //title: { text: 'Time (Seconds)' },
       type: 'datetime',
-      dateTimeLabelFormats: { second: '%S.%L' },
-      max: 300,
-      min: 0,
-      reversed: true,
+      dateTimeLabelFormats: { second: '%H:%M:%S' },
+        //max: 300,
+        //min: 0,
+        //reversed: true,
 
     },
     yAxis: {
@@ -190,30 +179,25 @@
       min: graphY_Min,
 
     },
-    series: [{
-      name: 'testData',
-      data: [10, 20, 30, 40, 50]
-    },],
     credits: { enabled: false }
   });
-  // setInterval(function ( ) {
-  //   var xhttp = new XMLHttpRequest();
-  //   xhttp.onreadystatechange = function() {
-  //     if (this.readyState == 4 && this.status == 200) {
-  //       var x = (new Date()).getTime(),
-  //           y = parseFloat(this.responseText);
-  //       //console.log(this.responseText);
-  //       if(chartT.series[0].data.length > 40) {
-  //         chartT.series[0].addPoint([x, y], true, true, true);
-  //       } else {
-  //         chartT.series[0].addPoint([x, y], true, false, true);
-  //       }
-  //     }
-  //   };
-  //   xhttp.open("GET", "/temperature", true);
-  //   xhttp.send();
-  // }, 30000 ) ;
-
+   setInterval(function ( ) {
+     var xhttp = new XMLHttpRequest();
+     xhttp.onreadystatechange = function() {
+       if (this.readyState == 4 && this.status == 200) {
+         var x = (new Date()).getTime(),
+             y = parseFloat(this.responseText);
+         //console.log(this.responseText);
+         if(chartT.series[0].data.length > 40) {
+           chartT.series[0].addPoint([x, y], true, true, true);
+         } else {
+           chartT.series[0].addPoint([x, y], true, false, true);
+         }
+       }
+     };
+     xhttp.open("GET", "/temperature", true);
+     xhttp.send();
+   }, 900 );
   function cToF(celsius) {
     var cTemp = celsius;
     var cToFahr = cTemp * 9 / 5 + 32;
@@ -232,6 +216,7 @@
   lcdButton.addEventListener('mousedown', function handleClick(event){
     event.preventDefault();
     document.getElementById("turnOnLcdButton").innerHTML = "LCD on";
+    
   });
   lcdButton.addEventListener('mouseup', function handleClick(event){
     event.preventDefault();
@@ -245,6 +230,19 @@
     const maxDisplay = document.getElementById('maxDisplay');
     maxDisplay.innerHTML = 'Max:' + maxNumber;
   });
+//  setInterval(function () {
+//    var yhttp = new XMLHttpRequest();
+//    yhttp.onreadystatechange = function(){
+//      if(this.readyState == 4 && this.status == 200){
+//        var newMin =document.getElementById('minDisplay').value;
+//        document.getElementById('minDisplay').innerHTML = "Value Pulled";
+//        String y = newMin.toString(10);
+//      }
+//    };
+//    yhttp.open("POST", "/min", true);
+//    yhttp.setRequestHeader("Content-type", "text/plain");
+//    yhttp.send(y);
+//  },500);
   minBtn.addEventListener('click', function handleClick(event) {
     event.preventDefault();
     const minInput = document.getElementById('minInput');
@@ -252,6 +250,9 @@
     minInput.value = '';
     const minDisplay = document.getElementById('minDisplay');
     minDisplay.innerHTML = 'Min:' + minNumber;
+    var newHttp = new XMLHttpRequest();
+    newHttp.open("GET", "/min?newMin="+minNumber, true);
+    newHttp.send();
   });
 
 </script>
@@ -262,9 +263,10 @@
 //hardware set up
 int buttonPin = 35; // digital pin for push button
 const int switchPin = 34; // digital pin for the switch
-const int lcdPin = 22; // this is where the LCD power goes
+const int lcdPin = 19; // this is where the LCD power goes
 const int rs = 14, en = 27, d4 = 26, d7 = 32, d6 = 33, d5 = 25; // follow link in google doc for wiring
 //const byte ip[] = { 192, 168, 0, 50 };
+
 
 int switchVal =-1;
 int buttonVal=-1;
@@ -285,7 +287,6 @@ float TextTopBoundryInC = 26.0; // keep in C
 float TextBottomBoundryInC = 22.0; // keep in C
 const char* ssid  = "Galaxy S2267C8";
 const char* password = "nxzz5758";
-IPAddress ip(192, 168, 0, 177); 
 AsyncWebServer server(80);
 
 void setup() {
@@ -301,6 +302,23 @@ void setup() {
   lcd.print("Hello Group 17");
   virtualPowerLCD(true);
   initWiFi();
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", html);
+  });
+  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", String(readProbe()).c_str());
+    });
+
+  
+  server.on("/min", HTTP_GET, [](AsyncWebServerRequest *request){
+    String minInput = request->getParam("newMin")->value();
+    minFunct(minInput.toInt());
+    request->send(200, "text/plain", "OK");
+  });
+  
+    
+    server.begin();
+  //runClient();
 }
 
 void loop() {
@@ -310,11 +328,9 @@ void loop() {
     tempVal = probetemp;
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print(String(t));
+    String ss = String(t)+"C";
+    lcd.print(ss);
   }
-
-  runClient();
-
   buttonState = digitalRead(switchPin);
   if(switchVal!=buttonState){
     switchVal = buttonState;
@@ -330,34 +346,43 @@ void loop() {
       
     }
   }
- delay(100);
+  
+  delay(500);
 }
 
 
 char httpResponse[90] = {0};
 char responseIndex = 0;
 void runClient(){
-
-  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
-    String inputMessage;
-    String inputParam;
-    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
-    if (request->hasParam("maxInput")) {
-      inputMessage = request->getParam("maxInput")->value();
-      inputParam = "maxInput";
-    }else{
-      Serial.println("html failed");
-    }
-    Serial.println("Max: "+inputMessage);
-  });
+//  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
+//    String inputMessage;
+//    String inputParam;
+//    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
+//    if (request->hasParam("max1")) {
+//      inputMessage = request->getParam("max1")->value();
+//      inputParam = "max1";
+//    }else{
+//      Serial.println("html failed");
+//    }
+//    Serial.println("Max: "+inputMessage);
+    
+    
+  //});
 //      int virtualButtonState = 1;
 //      if (virtualButtonState == 1) { 
 //        virtualPowerLCD(true);
 //      }else{ 
 //        virtualPowerLCD(false);
 //      }
+  //server.onNotFound(notFound);
+  //server.begin();
 }
 
+void minFunct(int newMin){
+  TextBottomBoundryInC=newMin;
+  Serial.print("Min: ");
+  Serial.println(TextBottomBoundryInC);
+}
 void initWiFi() {
     USE_SERIAL.println();
     USE_SERIAL.println();
@@ -376,9 +401,9 @@ void initWiFi() {
       Serial.println("Connecting to WiFi..");
     }
     Serial.println(WiFi.localIP());
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "text/html", html, processor);
-    });
+//    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+//      request->send_P(200, "text/html", html, processor);
+//    });
 
 //    server.on("/update", HTTP_GET, [] (AsyncWebServerRequest *request) {
 //    String inputMessage1;
@@ -399,7 +424,7 @@ void initWiFi() {
 //    Serial.println(inputMessage2);
 //    request->send(200, "text/plain", "OK");
 //  });
-  server.begin();
+  //server.begin();
     
 }
 

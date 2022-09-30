@@ -380,13 +380,13 @@ void loop() {
   float t = readProbe();
   probetemp = changeReading(t);
    
-  if(tempVal != probetemp){
-    tempVal = probetemp;
+  //if(tempVal != probetemp){
+    //tempVal = probetemp;
     lcd.clear();
     lcd.setCursor(0, 0);
     String ss =  String(probetemp) + " C";
     lcd.println(ss);
-  }
+  //}
   buttonState = digitalRead(switchPin);
   if(switchVal!=buttonState){
     switchVal = buttonState;

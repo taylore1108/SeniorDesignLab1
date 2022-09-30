@@ -12,6 +12,7 @@
 //          - should indicate if the sensor is unplugged 
 //          - 
 //      2. change the number the text is sent to *****
+//          - needs to have check to make sure the number is valid
 //      
 
         TODO:
@@ -59,7 +60,7 @@
   <div id="chart-temperature" class="container"></div>
     <div>
       <div id="buttonSection" class="container" style="text-align: center;">
-        <button>
+        <button id = "turnOnLcdButton">
           Turn on LCD
         </button>
         <button id="degreeButton">Change to Fahrenheit</button>
@@ -71,8 +72,28 @@
             pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" />
         </div>
         <div style="text-align: center;">
-          <button id="phoneSubmit" type="submit">Submit</button>
+          <button id="phoneSubmit" type="submit">Submit #</button>
           <Label id="phoneDisplay">Num: N\A</label>
+        </div>
+      </form>
+      <form>
+        <div style="text-align: center; margin:5px;" >
+          <label for "maxInput">Enter the max temp: </label>
+          <input id = "maxInput" type = "number" required name = "maxInput" placeholder = "max"/>
+        </div>
+        <div style="text-align: center;">
+          <button id = "maxSubmit" type = "submit">Submit Max</button>
+          <Label id = "maxDisplay">Max: 25</Label>
+        </div>
+      </form>
+      <form>
+        <div style="text-align: center; margin:5px;" >
+          <label for "minInput">Enter the min temp: </label>
+          <input id = "minInput" type = "number" required name = "minInput" placeholder = "min"/>
+        </div>
+        <div style="text-align: center;">
+          <button id = "minSubmit" type = "submit">Submit Min</button>
+          <Label id = "minDisplay">Min: 23</Label>
         </div>
       </form>
     </div>
@@ -82,8 +103,13 @@
   var graphY_Max = 50;
   var graphY_Min = 10;
   var phoneNumber = "N\\A";
+  var safeMax = 25;
+  var safeMin = 23;
   const degreeBtn = document.getElementById('degreeButton');
   const submitElem = document.getElementById('phoneSubmit');
+  const lcdButton = document.getElementById('turnOnLcdButton');
+  const maxBtn = document.getElementById('maxSubmit');
+  const minBtn = document.getElementById('minSubmit');
   // const numDisplay = document.getElementById('phoneDisplay');
   degreeBtn.addEventListener("click", () => {
     isCelsius = !isCelsius;
@@ -205,6 +231,31 @@
     numInput.value = '';
     const numDisplay = document.getElementById('phoneDisplay');
     numDisplay.innerHTML = 'Num:' + phoneNumber;
+  });
+
+  lcdButton.addEventListener('mousedown', function handleClick(event){
+    event.preventDefault();
+    document.getElementById("turnOnLcdButton").innerHTML = "LCD on";
+  });
+  lcdButton.addEventListener('mouseup', function handleClick(event){
+    event.preventDefault();
+    document.getElementById("turnOnLcdButton").innerHTML = "Turn on LCD";
+  });
+  maxBtn.addEventListener('click', function handleClick(event) {
+    event.preventDefault();
+    const maxInput = document.getElementById('maxInput');
+    maxNumber = maxInput.value;
+    maxInput.value = '';
+    const maxDisplay = document.getElementById('maxDisplay');
+    maxDisplay.innerHTML = 'Max:' + maxNumber;
+  });
+  minBtn.addEventListener('click', function handleClick(event) {
+    event.preventDefault();
+    const minInput = document.getElementById('minInput');
+    minNumber = minInput.value;
+    minInput.value = '';
+    const minDisplay = document.getElementById('minDisplay');
+    minDisplay.innerHTML = 'Min:' + minNumber;
   });
 
 </script>

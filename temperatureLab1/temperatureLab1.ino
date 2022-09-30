@@ -79,7 +79,7 @@
       </div>
       <div style="text-align: center;">
         <button id="maxSubmit" type="submit">Submit Max</button>
-        <Label id="maxDisplay">Max: 23</Label>
+        <Label id="maxDisplay">Max: 26</Label>
       </div>
       </form>
       <form>
@@ -89,25 +89,31 @@
         </div>
         <div style="text-align: center;">
           <button id = "minSubmit" type = "submit">Submit Min</button>
-          <Label id = "minDisplay">Min: 23</Label>
+          <Label id = "minDisplay">Min: 22</Label>
         </div>
       </form>
     </div>
+    <div style="text-align: center; margin:5px;">
+          <button id="fullscreen" type = "submit">Fullscreen</button>
+     </div>
+    <dialog id = "myDialog">The Device is switched off</dialog>
+
 </body>
 <script>
   var isCelsius = true;
   var graphY_Max = 50;
   var graphY_Min = 10;
   var phoneNumber = "N\\A";
-  var safeMax = 25;
-  var safeMin = 23;
+  var safeMax = 26;
+  var isDialog = false;
+  var safeMin = 22;
   const degreeBtn = document.getElementById('degreeButton');
   const submitElem = document.getElementById('phoneSubmit');
   const lcdButton = document.getElementById('turnOnLcdButton');
   const maxBtn = document.getElementById('maxSubmit');
   const minBtn = document.getElementById('minSubmit');
   // const numDisplay = document.getElementById('phoneDisplay');
-  
+  const fullButton = document.getElementById('fullscreen');
   var chartT = new Highcharts.Chart({
     chart: {
       renderTo: 'chart-temperature',
@@ -167,7 +173,7 @@
     xAxis: {
       //title: { text: 'Time (Seconds)' },
       type: 'datetime',
-      dateTimeLabelFormats: { second: '%H,%M,%S' },
+      dateTimeLabelFormats: { second: '%H:%M:%S' },
       scrollbar:{
         enabled: true
       },
@@ -190,12 +196,19 @@
        if (this.readyState == 4 && this.status == 200) {
          var x = (new Date()).getTime(),
              y = parseFloat(this.responseText);
-         //console.log(this.responseText);
-         if(chartT.series[0].data.length > 300) {
-           chartT.series[0].addPoint([x, y], true, true, true);
-         } else {
-           chartT.series[0].addPoint([x, y], true, false, true);
-         }
+         if(y>0){
+          if(isDialog){
+            isDialog=false;
+            hidePopUp();
+          }
+          if (chartT.series[0].data.length > 40) {
+            chartT.series[0].addPoint([x, y], true, true, true);
+          } else {
+            chartT.series[0].addPoint([x, y], true, false, true);
+          }
+        }else{
+          showPopUp();
+        }
        }
      };
      xhttp.open("GET", "/temperature", true);
@@ -217,6 +230,10 @@
     var newHttp = new XMLHttpRequest();
     newHttp.open("GET", "/phone?newPhone="+phoneNumber, true);
     newHttp.send();
+  });
+  fullButton.addEventListener('click', function handleClick(event) {
+    event.preventDefault();
+    chartT.fullscreen.toggle();
   });
 
   lcdButton.addEventListener('mousedown', function handleClick(event){
@@ -256,7 +273,16 @@
     newHttp.open("GET", "/min?newMin="+minNumber, true);
     newHttp.send();
   });
-
+function showPopUp(){
+    if(!isDialog){
+      isDialog=true;
+      document.getElementById("myDialog").show();
+    }
+  }
+  function hidePopUp(){
+    document.getElementById("myDialog").close();
+  }
+  
 degreeBtn.addEventListener("click", () => {
     isCelsius = !isCelsius;
     if (isCelsius) {
@@ -377,15 +403,15 @@ void setup() {
 }
 
 void loop() {
-  float t = readProbe();
-  probetemp = changeReading(t);
+  //float t = ;
+  //probetemp = ;
    
   //if(tempVal != probetemp){
     //tempVal = probetemp;
     lcd.clear();
     lcd.setCursor(0, 0);
-    String ss =  String(probetemp) + " C";
-    lcd.println(ss);
+    //String ss =  String(probetemp) + " C";
+    lcd.print(changeReading(readProbe()));
   //}
   buttonState = digitalRead(switchPin);
   if(switchVal!=buttonState){
@@ -406,12 +432,11 @@ void loop() {
       }
       else{
         virtualPowerLCD(true);
+        lcd.print(changeReading(readProbe()));
       }
     }
   }
-  
-  
-  delay(500);
+ 
 }
 
 
@@ -573,14 +598,14 @@ String changeReading(float temp){ //add savinf data here
 if(temp < 1){
     return "Unplugged Sensor";
   }
-//  if(temp < TextBottomBoundryInC){
-//    messageToText = "Temperature Probe detects temperature " +String(temp)+ "C, which is below lower boundry "+ String(TextBottomBoundryInC) +" C"; 
-//    sendTextTest2();
-//  }
-//  else if( temp > TextTopBoundryInC){
-//    messageToText = "Temperature Probe detects temperature " +String(temp)+ "C, which is above upper boundry "+ String(TextBottomBoundryInC) +" C"; 
-//    sendTextTest2();
-//  }
+  if(temp < TextBottomBoundryInC){
+    messageToText = "Temperature Probe detects temperature " +String(temp)+ "C, which is below lower boundry "+ String(TextBottomBoundryInC) +" C"; 
+    sendTextTest2();
+  }
+  else if( temp > TextTopBoundryInC){
+    messageToText = "Temperature Probe detects temperature " +String(temp)+ "C, which is above upper boundry "+ String(TextBottomBoundryInC) +" C"; 
+    sendTextTest2();
+  }
   
   return String(temp) + " C";
 }

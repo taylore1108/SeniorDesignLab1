@@ -1,7 +1,7 @@
 #include <HTTP_Method.h>
 #include <Uri.h>
 #include <WebServer.h>
-
+#include <SPI.h>
 #include <LiquidCrystal.h>
 #include <SPI.h>
 #include <WiFiClient.h>
@@ -10,8 +10,7 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
 #include <ESPAsyncWebServer.h>
-#include <WiFiMulti.h>
-#include <Wifi.h>
+#include <WiFi.h>
 #include <HTTPClient.h>
 
 
@@ -19,7 +18,7 @@
 
 
  const char html[] PROGMEM = R"=="==(
-    <!DOCTYPE HTML>
+<!DOCTYPE HTML>
 <html>
 
 <head>
@@ -57,7 +56,7 @@
   <div id="chart-temperature" class="container"></div>
     <div>
       <div id="buttonSection" class="container" style="text-align: center;">
-        <button>
+        <button id = "turnOnLcdButton">
           Turn on LCD
         </button>
         <button id="degreeButton">Change to Fahrenheit</button>
@@ -69,8 +68,28 @@
             pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" />
         </div>
         <div style="text-align: center;">
-          <button id="phoneSubmit" type="submit">Submit</button>
+          <button id="phoneSubmit" type="submit">Submit #</button>
           <Label id="phoneDisplay">Num: N\A</label>
+        </div>
+      </form>
+      <form>
+        <div style="text-align: center; margin:5px;" >
+          <label for "maxInput">Enter the max temp: </label>
+          <input id = "maxInput" type = "number" required name = "maxInput" placeholder = "max"/>
+        </div>
+        <div style="text-align: center;">
+          <button id = "maxSubmit" type = "submit">Submit Max</button>
+          <Label id = "maxDisplay">Max: 25</Label>
+        </div>
+      </form>
+      <form>
+        <div style="text-align: center; margin:5px;" >
+          <label for "minInput">Enter the min temp: </label>
+          <input id = "minInput" type = "number" required name = "minInput" placeholder = "min"/>
+        </div>
+        <div style="text-align: center;">
+          <button id = "minSubmit" type = "submit">Submit Min</button>
+          <Label id = "minDisplay">Min: 23</Label>
         </div>
       </form>
     </div>
@@ -80,8 +99,13 @@
   var graphY_Max = 50;
   var graphY_Min = 10;
   var phoneNumber = "N\\A";
+  var safeMax = 25;
+  var safeMin = 23;
   const degreeBtn = document.getElementById('degreeButton');
   const submitElem = document.getElementById('phoneSubmit');
+  const lcdButton = document.getElementById('turnOnLcdButton');
+  const maxBtn = document.getElementById('maxSubmit');
+  const minBtn = document.getElementById('minSubmit');
   // const numDisplay = document.getElementById('phoneDisplay');
   degreeBtn.addEventListener("click", () => {
     isCelsius = !isCelsius;
@@ -172,6 +196,23 @@
     },],
     credits: { enabled: false }
   });
+  // setInterval(function ( ) {
+  //   var xhttp = new XMLHttpRequest();
+  //   xhttp.onreadystatechange = function() {
+  //     if (this.readyState == 4 && this.status == 200) {
+  //       var x = (new Date()).getTime(),
+  //           y = parseFloat(this.responseText);
+  //       //console.log(this.responseText);
+  //       if(chartT.series[0].data.length > 40) {
+  //         chartT.series[0].addPoint([x, y], true, true, true);
+  //       } else {
+  //         chartT.series[0].addPoint([x, y], true, false, true);
+  //       }
+  //     }
+  //   };
+  //   xhttp.open("GET", "/temperature", true);
+  //   xhttp.send();
+  // }, 30000 ) ;
 
   function cToF(celsius) {
     var cTemp = celsius;
@@ -188,27 +229,42 @@
     numDisplay.innerHTML = 'Num:' + phoneNumber;
   });
 
+  lcdButton.addEventListener('mousedown', function handleClick(event){
+    event.preventDefault();
+    document.getElementById("turnOnLcdButton").innerHTML = "LCD on";
+  });
+  lcdButton.addEventListener('mouseup', function handleClick(event){
+    event.preventDefault();
+    document.getElementById("turnOnLcdButton").innerHTML = "Turn on LCD";
+  });
+  maxBtn.addEventListener('click', function handleClick(event) {
+    event.preventDefault();
+    const maxInput = document.getElementById('maxInput');
+    maxNumber = maxInput.value;
+    maxInput.value = '';
+    const maxDisplay = document.getElementById('maxDisplay');
+    maxDisplay.innerHTML = 'Max:' + maxNumber;
+  });
+  minBtn.addEventListener('click', function handleClick(event) {
+    event.preventDefault();
+    const minInput = document.getElementById('minInput');
+    minNumber = minInput.value;
+    minInput.value = '';
+    const minDisplay = document.getElementById('minDisplay');
+    minDisplay.innerHTML = 'Min:' + minNumber;
+  });
+
 </script>
-</html>
-)=="==";
-char webpage[] PROGMEM = R"=="==( 
-<html>
-  <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.6/svg.min.js"></script>
-  </head>
-  <body>
-  </body>
+
 </html>
 )=="==";
 
-
-WiFiMulti wifiMulti;
 //hardware set up
 int buttonPin = 35; // digital pin for push button
 const int switchPin = 34; // digital pin for the switch
-const int lcdPin = 13; // this is where the LCD power goes
+const int lcdPin = 22; // this is where the LCD power goes
 const int rs = 14, en = 27, d4 = 26, d7 = 32, d6 = 33, d5 = 25; // follow link in google doc for wiring
-const byte ip[] = { 192, 168, 0, 50 };
+//const byte ip[] = { 192, 168, 0, 50 };
 
 int switchVal =-1;
 int buttonVal=-1;
@@ -225,10 +281,11 @@ const char* resource = "https://maker.ifttt.com/trigger/TempTrigger/with/key/fOZ
 //const char* server = "maker.ifttt.com";
 String numberToText = "16308006164";
 String messageToText = "This is a text of the arduino functions";
-int TextTopBoundryInC = 23; // keep in C
-int TextBottomBoundryInC = 25; // keep in C
-const char* ssid     = "Galaxy S2267C8";
+float TextTopBoundryInC = 26.0; // keep in C
+float TextBottomBoundryInC = 22.0; // keep in C
+const char* ssid  = "Galaxy S2267C8";
 const char* password = "nxzz5758";
+IPAddress ip(192, 168, 0, 177); 
 AsyncWebServer server(80);
 
 void setup() {
@@ -241,18 +298,23 @@ void setup() {
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
   lcd.clear();
-  //lcd.print("Hello World");
+  lcd.print("Hello Group 17");
+  virtualPowerLCD(true);
   initWiFi();
 }
 
 void loop() {
-  probetemp = changeReading(readProbe(), changetoF);
+  float t = readProbe();
+  probetemp = changeReading(t, changetoF);
   if(tempVal != probetemp){
     tempVal = probetemp;
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print(String(probetemp));
+    lcd.print(String(t));
   }
+
+  runClient();
+
   buttonState = digitalRead(switchPin);
   if(switchVal!=buttonState){
     switchVal = buttonState;
@@ -265,14 +327,35 @@ void loop() {
       buttonVal = buttonState;
       String s = String(buttonVal);
       USE_SERIAL.printf("[DEBUG] BUTTON %s...\n",s);
-      if (buttonState == HIGH) { 
-        powerLCD(true);
-      }else{ 
-        powerLCD(false);
-      }
+      
     }
   }
  delay(100);
+}
+
+
+char httpResponse[90] = {0};
+char responseIndex = 0;
+void runClient(){
+
+  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    String inputMessage;
+    String inputParam;
+    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
+    if (request->hasParam("maxInput")) {
+      inputMessage = request->getParam("maxInput")->value();
+      inputParam = "maxInput";
+    }else{
+      Serial.println("html failed");
+    }
+    Serial.println("Max: "+inputMessage);
+  });
+//      int virtualButtonState = 1;
+//      if (virtualButtonState == 1) { 
+//        virtualPowerLCD(true);
+//      }else{ 
+//        virtualPowerLCD(false);
+//      }
 }
 
 void initWiFi() {
@@ -285,8 +368,9 @@ void initWiFi() {
         USE_SERIAL.flush();
         delay(1000);
     }
-    
+    //WiFi.config(ip);
     WiFi.begin(ssid,password);
+    
     while (WiFi.status() != WL_CONNECTED) {
       delay(1000);
       Serial.println("Connecting to WiFi..");
@@ -391,7 +475,7 @@ String changeReading(float temp, boolean inFahrenheit){ //add savinf data here
   return String(temp) + "C";
 }
 
-void powerLCD(boolean power){ // todo test this
+void virtualPowerLCD(boolean power){ // todo test this
   if (power){
     digitalWrite(lcdPin, HIGH);
     
